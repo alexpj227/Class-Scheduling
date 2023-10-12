@@ -1,7 +1,11 @@
 import random, copy
 from Classes import *
 from math import ceil, log2
+from openpyxl import Workbook
+from openpyxl.styles import PatternFill, Font
 import math
+
+excel_data = {}
 
 professor_courses = {
     "John": ["English", "Art"],
@@ -49,54 +53,65 @@ professor_availability = {
     "Sally": ["14:00", "15:00", "16:00", "17:00", "9:30"]
 }
 
-Group.groups = [Group("a", 12), Group("b", 12), Group("c", 16), Group("d", 16), Group("e", 18), Group("f", 18)]
+Group.groups = [
+    Group("a", 12),
+    Group("b", 12),
+    Group("c", 16),
+    Group("d", 16),
+    Group("e", 18),
+    Group("f", 18),
+]
 
 Professor.professors = [
     Professor("John"), Professor("Sarah"), Professor("Susan"), Professor("Tom"),
     Professor("Frank"), Professor("Herman"), Professor("Zed"), Professor("Clint"),
     Professor("Peter"), Professor("Bill"), Professor("Anatole"), Professor("Porche"),
     Professor("Tandis"), Professor("Sonia"), Professor("Sharon"), Professor("Pi"),
-    Professor("Xi"), Professor("Chu"), Professor("Kate"), Professor("Sally")
+    Professor("Xi"), Professor("Chu"), Professor("Kate"), Professor("Sally"),
+    Professor("John1"), Professor("Sarah1"), Professor("Susan1"), Professor("Tom1"),
+    Professor("Frank1"), Professor("Herman1"), Professor("Zed1"), Professor("Clint1"),
+    Professor("Peter1"), Professor("Bill1"), Professor("Anatole1"), Professor("Porche1"),
+    Professor("Tandis1"), Professor("Sonia1"), Professor("Sharon1"), Professor("Pi1"),
+    Professor("Xi1"), Professor("Chu1"), Professor("Kate1"), Professor("Sally1")
 ]
 
-CourseClass.classes = [CourseClass("English"), CourseClass("Math"), CourseClass("Art"), CourseClass("Science")]
+CourseClass.classes = [
+    CourseClass("English"),
+    CourseClass("Math"),
+    CourseClass("Art"),
+    CourseClass("Science"),
+]
 
 Room.rooms = [Room("A", 12), Room("B", 12), Room("C", 16), Room("D", 16), Room("E", 18), Room("F", 18)]
 
 # M-F 14:00-20:00
 # SAT,SUN: 9:30-19:00
 Slot.slots = [
-    Slot("14:00", "15:45", "Mon"),
-    Slot("16:00", "17:45", "Mon"),
-    Slot("18:00", "19:45", "Mon"),
-
-    Slot("14:00", "15:45", "Tues"),
-    Slot("16:00", "17:45", "Tues"),
-    Slot("18:00", "19:45", "Tues"),
-
-    Slot("14:00", "15:45", "Wed"),
-    Slot("16:00", "17:45", "Wed"),
-    Slot("18:00", "19:45", "Wed"),
-
-    Slot("14:00", "15:45", "Thu"),
-    Slot("16:00", "17:45", "Thu"),
-    Slot("18:00", "19:45", "Thu"),
-
-    Slot("14:00", "15:45", "Fri"),
-    Slot("16:00", "17:45", "Fri"),
-    Slot("18:00", "19:45", "Fri"),
-
-    Slot("9:30", "11:15", "Sat"),
-    Slot("11:30", "13:15", "Sat"),
-    Slot("13:30", "15:15", "Sat"),
-    Slot("15:30", "17:15", "Sat"),
-    Slot("17:30", "19:00", "Sat"),
-
-    Slot("9:30", "11:15", "Sun"),
-    Slot("11:30", "13:15", "Sun"),
-    Slot("13:30", "15:15", "Sun"),
-    Slot("15:30", "17:15", "Sun"),
-    Slot("17:30", "19:00", "Sun")
+    Slot("14:00", "15:45", "Mon", course_class=CourseClass("Math")),
+    Slot("16:00", "17:45", "Mon", course_class=CourseClass("Art")),
+    Slot("18:00", "19:45", "Mon", course_class=CourseClass("Math")),
+    Slot("14:00", "15:45", "Tues", course_class=CourseClass("English")),
+    Slot("16:00", "17:45", "Tues", course_class=CourseClass("Science")),
+    Slot("18:00", "19:45", "Tues", course_class=CourseClass("Math")),
+    Slot("14:00", "15:45", "Wed", course_class=CourseClass("English")),
+    Slot("16:00", "17:45", "Wed", course_class=CourseClass("Science")),
+    Slot("18:00", "19:45", "Wed", course_class=CourseClass("Art")),
+    Slot("14:00", "15:45", "Thu", course_class=CourseClass("English")),
+    Slot("16:00", "17:45", "Thu", course_class=CourseClass("Math")),
+    Slot("18:00", "19:45", "Thu", course_class=CourseClass("English")),
+    Slot("14:00", "15:45", "Fri", course_class=CourseClass("Science")),
+    Slot("16:00", "17:45", "Fri", course_class=CourseClass("Art")),
+    Slot("18:00", "19:45", "Fri", course_class=CourseClass("Math")),
+    Slot("9:30", "11:15", "Sat", course_class=CourseClass("English")),
+    Slot("11:30", "13:15", "Sat", course_class=CourseClass("Science")),
+    Slot("13:30", "15:15", "Sat", course_class=CourseClass("Art")),
+    Slot("15:30", "17:15", "Sat", course_class=CourseClass("English")),
+    Slot("17:30", "19:00", "Sat", course_class=CourseClass("Art")),
+    Slot("9:30", "11:15", "Sun", course_class=CourseClass("Math")),
+    Slot("11:30", "13:15", "Sun", course_class=CourseClass("Math")),
+    Slot("13:30", "15:15", "Sun", course_class=CourseClass("English")),
+    Slot("15:30", "17:15", "Sun", course_class=CourseClass("Science")),
+    Slot("17:30", "19:00", "Sun", course_class=CourseClass("Math"))
 ]
 
 # TODO
@@ -179,6 +194,7 @@ def convert_input_to_bin():
     global cpg, lts, slots, max_score
 
     cpg = []
+    # Room.assigned_slots = {}
     for professor in Professor.professors:
         for course in professor_courses.get(professor.name, []):
             group = random.choice(Group.groups)
@@ -188,8 +204,22 @@ def convert_input_to_bin():
                                if slot.start in professor_availability.get(professor.name, [])]
             if not available_slots: continue
 
-            slot = random.choice(available_slots)
-            room = random.choice(Room.rooms)
+            assigned_room = False
+            num_tries = 500
+            # print("Before assign", Room.assigned_slots)
+            for i in range(num_tries):
+                slot = random.choice(available_slots)
+                room = random.choice(Room.rooms)
+                if room.name not in Room.assigned_slots:
+                    Room.assigned_slots[room.name] = []
+                if slot.get_key() not in Room.assigned_slots[room.name]:
+                    Room.assigned_slots[room.name].append(slot.get_key())
+                    assigned_room = True
+                    break
+            if not assigned_room:
+                continue
+            # print("after assign", Room.assigned_slots)
+
             cpg.extend([
                 (bin(CourseClass.find(course))[2:]).rjust(bits_needed(CourseClass.classes), '0'),
                 (bin(Professor.find(professor.name))[2:]).rjust(bits_needed(Professor.professors), '0'),
@@ -400,12 +430,105 @@ def selection(population, n):
 
 
 def print_chromosome(chromosome):
+    # data = {
+    #     "[room]": [
+    #         ["Time", "Mon", "Tues", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    #     ]
+    # }
+    day_to_index = {
+        "Mon": 1,
+        "Tues": 2,
+        "Wed": 3,
+        "Thu": 4,
+        "Fri": 5,
+        "Sat": 6,
+        "Sun": 7
+    }
+    course = CourseClass.classes[int(course_bits(chromosome), 2)]
+    professor = Professor.professors[int(professor_bits(chromosome), 2)]
+    group = Group.groups[int(group_bits(chromosome), 2)]
+    slot = Slot.slots[int(slot_bits(chromosome), 2)]
+    room = Room.rooms[int(lt_bits(chromosome), 2)]
+
+    if room.name not in excel_data:
+        excel_data[room.name] = [
+            ["Time", "Mon", "Tues", "Wed", "Thu", "Fri", "Sat", "Sun"]
+        ]
+
+    row = [''] * 8
+    row[0] = "{start}-{end}".format(start=slot.start, end=slot.end)
+    row[day_to_index[slot.day]] = "{subject}: {professor}".format(subject=course.code, professor=professor.name)
+    excel_data[room.name].append(row)
     print(CourseClass.classes[int(course_bits(chromosome), 2)], " | ",
           Professor.professors[int(professor_bits(chromosome), 2)], " | ",
           Group.groups[int(group_bits(chromosome), 2)], " | ",
           Slot.slots[int(slot_bits(chromosome), 2)], " | ",
           Room.rooms[int(lt_bits(chromosome), 2)])
 
+
+def write_excel():
+    """
+    {'E': [
+            ['Time', 'Mon', 'Tues', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            ['9:30-11:15', '', '', '', '', '', 'English: John', '']
+        ]
+    }
+    openpyxl_width = excel_width * 1.143
+
+    13.55598
+    """
+    blue_fill = PatternFill(start_color="365f92", end_color="365f92", fill_type="solid")
+    light_blue_fill = PatternFill(start_color="dce6f1", end_color="dce6f1", fill_type="solid")
+    white_font = Font(color="FFFFFF", bold=True)
+    wb = Workbook()
+    # ws = wb.active
+    for key, value in sorted(excel_data.items()):
+        wb.create_sheet(key)
+        ws = wb[key]
+        is_first_row = True
+        excel_row_index = 1
+        for row in excel_data[key]:
+            ws.append(row)
+            if is_first_row:
+                is_first_row = False
+                for col in range(1, len(row) + 1):
+                    cell = ws.cell(row=1, column=col)
+                    cell.fill = blue_fill
+                    cell.font = white_font
+            else:
+                for col in range(2, len(row) + 1):
+                    cell = ws.cell(row=excel_row_index, column=col)
+                    if len(str(cell.value)) > 0:
+                        cell.fill = light_blue_fill
+            excel_row_index += 1
+
+        # Get all values from column A
+        values = [cell.value for cell in ws['A'] if cell.value is not None]
+        # Sort the values in descending order
+        values.sort(reverse=True)
+        # Update the worksheet with the sorted values
+        for idx, value in enumerate(values, start=1):
+            ws[f'A{idx}'].value = value
+
+        adjust_column_width(ws)
+        ws.column_dimensions['A'].width = 13.55598
+
+    default_sheet = wb['Sheet']
+    wb.remove(default_sheet)
+    wb.save("Class_Schedule_colored.xlsx")
+
+def adjust_column_width(worksheet):
+    for column in worksheet.columns:
+        max_length = 0
+        column = [cell for cell in column]
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(cell.value)
+            except:
+                pass
+        adjusted_width = (max_length + 2)  # Adding a little extra space
+        worksheet.column_dimensions[column[0].column_letter].width = adjusted_width
 
 # Simple Searching Neighborhood
 # It randomly changes timeslot of a class/lab
@@ -510,8 +633,10 @@ def genetic_algorithm():
 
 def main():
     random.seed()
-    genetic_algorithm()
+    # genetic_algorithm()
     simulated_annealing()
+    print(excel_data)
+    write_excel()
 
 
 main()

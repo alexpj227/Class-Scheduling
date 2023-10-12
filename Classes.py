@@ -53,6 +53,7 @@ class CourseClass:
 
 class Room:
     rooms = None
+    assigned_slots = {}
 
     def __init__(self, name, size, is_lab=False):
         self.name = name
@@ -73,11 +74,15 @@ class Room:
 class Slot:
     slots = None
 
-    def __init__(self, start, end, day, is_lab_slot=False):
+    def __init__(self, start, end, day, is_lab_slot=False, course_class=None):
         self.start = start
         self.end = end
         self.day = day
         self.is_lab_slot = is_lab_slot
+        self.course_class = course_class
+
+    def get_key(self):
+        return "Slot: " + self.start + "-" + self.end + " Day: " + self.day
 
     def __repr__(self):
-        return "Slot: " + self.start + "-" + self.end + " Day: " + self.day
+        return "Slot: " + self.start + "-" + self.end + " Day: " + self.day + (" CourseClass: " + self.course_class.code if self.course_class else "")
